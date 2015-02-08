@@ -19,6 +19,7 @@ exports.parse = (url, cb)->
     else
         cb new Error("must have a url")
 
+
 ###
     parse zhihu tags
     @param {String} url
@@ -29,19 +30,23 @@ _parseTopic = (url, cb)->
         return cb(err) if err
         $ = cheerio.load(content)
 
-        title = util.getTopicTitle($('#zh-topic-title'))
-        followerCount = util.getFollowerCount($('#zh-topic-side-head'))
- 
-        tagsArr = util.getTags($, $("#zh-topic-side-children-list .zm-item-tag"))
-        questionsArr = util.getTopicQuestions($, $('.question_link'))
-
-        topic =
-            title: title
-            followerCount: followerCount
-            questions: questionsArr
-            childTags: tagsArr
+        topic = _parseTopicContent(err, content, $)
 
         cb null, topic
+
+exports.parseTopicContent = _parseTopicContent = (err, content, $)->
+    return err if err
+    title = util.getTopicTitle($('#zh-topic-title'))
+    followerCount = util.getFollowerCount($('#zh-topic-side-head'))
+    
+    tagsArr = util.getTags($, $("#zh-topic-side-children-list .zm-item-tag"))
+    questionsArr = util.getTopicQuestions($, $('.question_link'))
+    
+    topic =
+        title: title
+        followerCount: followerCount
+        questions: questionsArr
+        childTags: tagsArr
 
 ###
     parse zhihu question
@@ -52,39 +57,41 @@ _parseQuestion = (url, cb)->
     util.download url, (err, content)->
         return cb(err) if err
         $ = cheerio.load(content)
-
-        title = $('#zh-question-title').text().trim()
-        followerCount = util.getFollowerCount($('#zh-question-side-header-wrap'))
-        question = $("#zh-question-detail").html().trim()
-        tagElems = $(".zm-item-tag")
-
-        tags = []
-        tagElems.each (i, el)->
-            tags.push $(el).text().trim()
-
-        answersArr = []
-        answers = $('.zm-item-answer')
-        answers.each ()->
-            node = $(this)
-            authorInfo = node.find('.zm-item-answer-author-wrap').text().trim()
-            node.find('.toggle-expand').remove()
-            answerDetail = node.find('.zm-editable-content')
-
-            util.pullOutRealPath(answerDetail)
-            util.trimAttrs(answerDetail)
-
-            answersArr.push
-                author: util.getAuthor(authorInfo)
-                content: answerDetail.html().trim()
-
-        article =
-            title: title
-            followerCount: followerCount
-            question: question
-            tags: tags
-            answers: answersArr
-
+        article = _parseQuestionContent(err, content, $)
         cb null, article
+
+exports.parseQuestionContent = _parseQuestionContent = (err, content, $)->
+    return err if err
+    title = $('#zh-question-title').text().trim()
+    followerCount = util.getFollowerCount($('#zh-question-side-header-wrap'))
+    question = $("#zh-question-detail").html().trim()
+    tagElems = $(".zm-item-tag")
+
+    tags = []
+    tagElems.each (i, el)->
+        tags.push $(el).text().trim()
+
+    answersArr = []
+    answers = $('.zm-item-answer')
+    answers.each ()->
+        node = $(this)
+        authorInfo = node.find('.zm-item-answer-author-wrap').text().trim()
+        node.find('.toggle-expand').remove()
+        answerDetail = node.find('.zm-editable-content')
+
+        util.pullOutRealPath(answerDetail)
+        util.trimAttrs(answerDetail)
+
+        answersArr.push
+            author: util.getAuthor(authorInfo)
+            content: answerDetail.html().trim()
+
+    article =
+        title: title
+        followerCount: followerCount
+        question: question
+        tags: tags
+        answers: answersArr
 
 ###
     parse zhihu daily page

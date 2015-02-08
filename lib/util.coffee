@@ -123,7 +123,6 @@ exports.getFollowerCount = (node)->
     console.log matches
     followerCount = parseInt(matches[1], 10)
 
-
 ###
     get author info
 ###
